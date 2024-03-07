@@ -20,6 +20,7 @@ export class AppComponent  implements OnInit{
   ];
   activeStep:  any =  this.stepsList[0];
 
+  stepperCompletionValue:number = 8;
   employeeObj: any = {
     "roleId": 0,
     "empId": 0,
@@ -53,17 +54,35 @@ export class AppComponent  implements OnInit{
     "designation": "string",
     "projectsWorkedOn": "string"
   }
+  employeeList: any[]=[];
+  isCreateView: boolean= false;
 
   constructor(private http: HttpClient) {
 
   }
   ngOnInit(): void {
+    this.loadAllEmployees();
     this.loadDesignations();
     this.loadRoles();
   }
 
+  addNew() {
+    this.isCreateView = true;
+  }
   setActiveStep(activeStep: any) {
     this.activeStep = activeStep;
+  }
+  gotoStep2() {
+    const currentStep = this.stepsList.find(m=>m.stepName == this.activeStep.stepName);
+    currentStep.isComplete = true;
+    this.activeStep = this.stepsList[1];
+    this.stepperCompletionValue = 50;
+  }
+  gotoStep3() {
+    const currentStep = this.stepsList.find(m=>m.stepName == this.activeStep.stepName);
+    currentStep.isComplete = true;
+    this.activeStep = this.stepsList[2];
+    this.stepperCompletionValue = 100;
   }
 
   addSkills() {
@@ -91,6 +110,18 @@ export class AppComponent  implements OnInit{
     this.employeeObj.ermEmpExperiences.unshift(expObj)
   }
 
+  onEdit(id: number){
+    this.http.get("https://freeapi.gerasim.in/api/EmployeeApp/GetEmployeeByEmployeeId?id=" +id).subscribe((res:any)=>{
+      this.employeeObj = res.data;
+      this.employeeObj.empId =  id;
+      this.isCreateView = true;
+    })
+  }
+  loadAllEmployees() {
+    this.http.get("https://freeapi.gerasim.in/api/EmployeeApp/GetAllEmployee").subscribe((res:any) => {
+      this.employeeList = res.data;
+    })
+  }
   loadDesignations() {
     this.http.get("https://freeapi.gerasim.in/api/EmployeeApp/GetAllDesignation").subscribe((res:any)=>{
       this.designationList = res.data;
@@ -102,12 +133,39 @@ export class AppComponent  implements OnInit{
       this.roleList = res.data;
     })
   }
-
+ 
+  onDelet(id:number) {
+    const isDelete = confirm("Are You sure want to delete");
+    if(isDelete) {
+      this.http.delete("https://freeapi.gerasim.in/api/EmployeeApp/DeleteEmployeeByEmpId?empId="+id).subscribe((res:any)=>{
+        if(res.result) {
+          alert('Employee Deleted Success');
+          this.loadAllEmployees();
+        } else {
+          alert(res.message)
+        }
+      })
+    }
+  }
   saveEmployee() {
     debugger;
     this.http.post("https://freeapi.gerasim.in/api/EmployeeApp/CreateNewEmployee", this.employeeObj).subscribe((res:any)=>{
       if(res.result) {
+        alert('Employee Created Success');
+        this.loadAllEmployees();
+        this.isCreateView = false;
+      } else {
+        alert(res.message)
+      }
+    })
+  }
+
+  updateEmployee() {
+    this.http.put("https://freeapi.gerasim.in/api/EmployeeApp/UpdateEmployee", this.employeeObj).subscribe((res:any)=>{
+      if(res.result) {
         alert('Employee Created Success')
+        this.loadAllEmployees();
+        this.isCreateView = false;
       } else {
         alert(res.message)
       }
